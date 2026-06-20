@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classeur aviation — Base de révision par thème</title>
+<style>
+:root{
+  --bg:#0F1822;--surface:#172430;--surface2:#1E2F3D;--raised:#243749;
+  --ink:#E8EEF3;--muted:#869aab;--faint:#5d7384;
+  --gold:#c9a24b;--gold-dim:rgba(201,162,75,.13);
+  --blue:#4a9bbe;--blue-dim:rgba(74,155,190,.13);
+  --green:#3FB984;--green-dim:rgba(63,185,132,.13);
+  --red:#e2614b;--red-dim:rgba(226,97,75,.13);
+  --line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
+  --sidebar:288px;
+  --mono:ui-monospace,"SF Mono",Consolas,monospace;
+  --sans:"Helvetica Neue",Arial,system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;
+  min-height:100vh;line-height:1.5;
+  background-image:radial-gradient(900px 380px at 72% -160px,rgba(201,162,75,.07),transparent 70%);
+  background-attachment:fixed}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);background:var(--surface);
+  border-right:1px solid var(--line);height:100vh;position:sticky;top:0;
+  overflow-y:auto;display:flex;flex-direction:column}
+.sb-head{padding:18px 18px 14px;border-bottom:1px solid var(--line)}
+.sb-head .eyebrow{font-family:var(--mono);font-size:9px;letter-spacing:3px;
+  text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.sb-head .title{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em;line-height:1.2}
+.sb-head .sub{font-size:11px;color:var(--muted);margin-top:3px}
+.prog{padding:13px 18px;border-bottom:1px solid var(--line)}
+.prog-lab{font-family:var(--mono);font-size:10px;color:var(--muted);display:flex;
+  justify-content:space-between;margin-bottom:6px}
+.pbar{height:4px;background:var(--raised);border-radius:4px;overflow:hidden}
+.pbar-fill{height:100%;background:var(--gold);border-radius:4px;transition:width .4s}
+.nav{flex:1;padding:8px 0 20px}
+.cat{margin-top:6px}
+.cat-head{display:flex;align-items:center;gap:8px;padding:9px 18px 7px;cursor:pointer;
+  font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--faint);user-select:none}
+.cat-head:hover{color:var(--muted)}
+.cat-head .dotc{width:7px;height:7px;border-radius:2px;flex:0 0 auto}
+.cat-head .chev{margin-left:auto;font-family:var(--mono);font-size:9px;transition:transform .2s}
+.cat.collapsed .chev{transform:rotate(-90deg)}
+.cat.collapsed .themes{display:none}
+.theme{display:flex;align-items:center;gap:9px;padding:7px 18px 7px 30px;font-size:12.5px;
+  cursor:pointer;color:var(--muted);border-left:2px solid transparent;transition:.13s}
+.theme:hover{color:var(--ink);background:rgba(255,255,255,.03)}
+.theme.active{color:var(--gold);border-left-color:var(--gold);background:var(--gold-dim)}
+.theme .tn{flex:1;line-height:1.25}
+.theme .cnt{font-family:var(--mono);font-size:9px;background:var(--raised);color:var(--faint);
+  padding:1px 6px;border-radius:10px;flex:0 0 auto}
+.theme .cnt.done{background:var(--green-dim);color:var(--green)}
+.theme .cnt.empty{opacity:.4}
+
+/* ── MAIN ── */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:10;background:rgba(15,24,34,.93);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:11px 24px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.crumb{font-size:13px;font-weight:700;color:var(--ink);flex:0 0 auto;display:flex;align-items:center;gap:8px}
+.crumb .cpill{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;
+  padding:2px 8px;border-radius:20px}
+.search{flex:1;min-width:160px;max-width:380px;position:relative}
+.search input{width:100%;background:var(--surface2);border:1px solid var(--line2);
+  border-radius:20px;padding:7px 14px 7px 32px;color:var(--ink);font-size:12.5px;font-family:var(--sans)}
+.search input:focus{outline:none;border-color:var(--gold)}
+.search input::placeholder{color:var(--faint)}
+.search .si{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint);font-size:12px}
+.fbtn{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;
+  padding:6px 12px;border-radius:20px;border:1px solid var(--line2);background:none;
+  color:var(--muted);cursor:pointer;transition:.15s;flex:0 0 auto}
+.fbtn:hover{color:var(--ink);border-color:var(--gold)}
+.fbtn.active{background:var(--gold-dim);color:var(--gold);border-color:var(--gold)}
+.content{padding:24px;max-width:880px}
+
+/* ── THEME HEADER ── */
+.th-header{margin-bottom:20px}
+.th-header .cpill{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
+  padding:3px 9px;border-radius:20px;display:inline-block;margin-bottom:8px}
+.th-header h2{font-size:23px;font-weight:800;color:var(--ink);letter-spacing:-.015em}
+.th-header .meta{font-size:11.5px;color:var(--faint);margin-top:5px;font-family:var(--mono)}
+
+/* ── FICHE ── */
+.fiches{display:flex;flex-direction:column;gap:13px}
+.fiche{background:var(--surface);border:1px solid var(--line);border-radius:13px;
+  padding:17px 19px;transition:border-color .2s}
+.fiche:hover{border-color:var(--line2)}
+.fiche.su{opacity:.5}
+.fiche-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:11px}
+.fiche-title{font-size:14px;font-weight:800;color:var(--ink);line-height:1.25;letter-spacing:-.01em}
+.tag{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
+  padding:2px 8px;border-radius:20px;white-space:nowrap;flex:0 0 auto}
+.tag.procedure{background:var(--gold-dim);color:var(--gold)}
+.tag.systeme{background:var(--blue-dim);color:var(--blue)}
+.tag.acronyme{background:var(--green-dim);color:var(--green)}
+.tag.retenir{background:var(--red-dim);color:var(--red)}
+.fiche-body{font-size:12.5px;color:var(--muted);line-height:1.55}
+.fiche-body ul{list-style:none}
+.fiche-body li{padding:2.5px 0 2.5px 16px;position:relative}
+.fiche-body li:before{content:"›";position:absolute;left:0;color:var(--gold);font-weight:700}
+.fiche-body .kw{font-family:var(--mono);background:var(--raised);color:var(--ink);font-size:11px;
+  padding:0 5px;border-radius:4px;font-weight:600}
+.fiche-body .num{font-family:var(--mono);color:var(--gold);font-weight:700}
+.fiche-body b{color:var(--ink);font-weight:700}
+.warn{margin-top:11px;background:rgba(226,97,75,.1);border-left:2px solid var(--red);
+  border-radius:0 6px 6px 0;padding:8px 11px;font-size:11.5px;color:var(--muted)}
+.warn strong{color:var(--red);font-size:10px;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:3px}
+.fiche-foot{margin-top:13px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sources{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.src{font-family:var(--mono);font-size:9.5px;color:var(--faint);background:var(--surface2);
+  border:1px solid var(--line);padding:2px 8px;border-radius:20px}
+.src:before{content:"📹 ";font-family:var(--sans)}
+.su-btn{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;
+  padding:5px 12px;border-radius:20px;border:1px solid var(--line2);background:none;
+  color:var(--faint);cursor:pointer;transition:.15s}
+.su-btn:hover{color:var(--green);border-color:var(--green)}
+.fiche.su .su-btn{background:var(--green-dim);color:var(--green);border-color:var(--green)}
+
+/* search result theme label */
+.res-theme{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;
+  color:var(--faint);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+
+/* empty */
+.empty{text-align:center;padding:56px 24px;color:var(--faint)}
+.empty .ico{font-size:30px;margin-bottom:14px;opacity:.6}
+.empty p{font-size:13px;max-width:420px;margin:0 auto;line-height:1.6}
+.empty .small{font-size:11.5px;margin-top:8px;color:var(--faint)}
+
+@media(max-width:760px){
+  body{flex-direction:column}
+  .sidebar{width:100%;height:auto;position:relative}
+  .content{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sb-head">
+    <div class="eyebrow">✈ Classeur aviation</div>
+    <div class="title">Base de révision par thème</div>
+    <div class="sub">Préparation sélection pilote</div>
+  </div>
+  <div class="prog">
+    <div class="prog-lab"><span>Fiches maîtrisées</span><span id="prog-txt">0 / 0</span></div>
+    <div class="pbar"><div class="pbar-fill" id="prog-bar" style="width:0%"></div></div>
+  </div>
+  <nav class="nav" id="nav"></nav>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="crumb" id="crumb">Tous les thèmes</div>
+    <div class="search">
+      <span class="si">⌕</span>
+      <input type="text" id="search" placeholder="Rechercher dans toutes les fiches…" autocomplete="off">
+    </div>
+    <button class="fbtn" id="todoBtn" data-on="0">À revoir</button>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<script>
+/* ════════ RÉFÉRENTIEL ════════ */
+const CATEGORIES = [
+  {id:'normal',  label:'Procédures normales',      color:'var(--gold)'},
+  {id:'systemes',label:'Systèmes',                 color:'var(--blue)'},
+  {id:'urgences',label:'Anormales & urgences',     color:'var(--red)'},
+  {id:'general', label:'Connaissances',            color:'var(--green)'},
+];
+const THEMES = [
+  {id:'miseenroute', cat:'normal',   label:'Mise en route & allumage moteurs'},
+  {id:'roulage',     cat:'normal',   label:'Roulage'},
+  {id:'decollage',   cat:'normal',   label:'Décollage & après décollage'},
+  {id:'envol',       cat:'normal',   label:'En vol (montée & croisière)'},
+  {id:'approche',    cat:'normal',   label:'Approche & atterrissage'},
+  {id:'elec',        cat:'systemes', label:'Électrique & APU'},
+  {id:'carbu',       cat:'systemes', label:'Carburant'},
+  {id:'hydro',       cat:'systemes', label:'Hydraulique'},
+  {id:'moteurs',     cat:'systemes', label:'Moteurs'},
+  {id:'commandes',   cat:'systemes', label:'Commandes & freinage'},
+  {id:'depress',     cat:'urgences', label:'Dépressurisation'},
+  {id:'panne_mot',   cat:'urgences', label:'Perte / panne moteur'},
+  {id:'nav',         cat:'general',  label:'Navigation'},
+  {id:'glossaire',   cat:'general',  label:'Glossaire'},
+];
+const SOURCES = {
+  b737_mer:'Mise en route — B737 NG (simu)',
+  a320_vent:'Atterrissage par vent fort — A320 (simu)',
+};
+function catColor(id){return (CATEGORIES.find(c=>c.id===id)||{}).color||'var(--muted)';}
+function catLabel(id){return (CATEGORIES.find(c=>c.id===id)||{}).label||'';}
+function themeObj(id){return THEMES.find(t=>t.id===id);}
+
+/* ════════ FICHES ════════ */
+const S=['b737_mer'];
+const FICHES=[
+/* MISE EN ROUTE */
+{id:'a1',th:'miseenroute',tag:'retenir',src:S,title:'Contexte de la mise en route',bullets:[
+  'La mise en route se fait au <b>poste de stationnement (contact)</b>, jamais sur la piste',
+  'À l\'arrivée dans le cockpit : <b>tout est éteint (OFF)</b>',
+  'On suit <b>toujours une checklist</b> — jamais de mémoire, sauf les procédures d\'urgence',
+  'Vidéo = mise en route <b>générique et pédagogique</b>, pas la procédure officielle exacte']},
+{id:'e1',th:'miseenroute',tag:'procedure',src:S,title:'La batterie — procédure',bullets:[
+  'Rôle : <b>amorcer les autres systèmes</b>. Elle ne "travaille" pas, elle lance',
+  'Interrupteur protégé par un <b>cache</b> → 2 gestes (évite la coupure accidentelle)',
+  'Procédure : soulever le cache → basculer sur <span class="kw">ON</span>',
+  'Résultat : <b>alarme "sur batterie"</b> (normale)',
+  'Durée max sur batterie : <span class="num">15 minutes</span>'],
+  warn:'Couper la batterie en vol = critique. Le cache empêche ce geste involontaire.'},
+{id:'p2',th:'miseenroute',tag:'procedure',src:S,title:'Démarrage de l\'APU — séquence',bullets:[
+  '<b>1.</b> Batterie <span class="kw">ON</span>',
+  '<b>2.</b> Pompe carburant APU <span class="kw">ON</span> (amène le kérosène à l\'APU)',
+  '<b>3.</b> Sélecteur APU <span class="kw">OFF/ON/START</span> → appuyer <b>START</b>',
+  '<b>4.</b> <b>Top chrono</b> (temps limite constructeur)',
+  '<b>5.</b> Température monte → voyants s\'allument',
+  '<b>6.</b> Voyant "électricité disponible" → APU OK → alarme batterie coupée']},
+{id:'m1',th:'miseenroute',tag:'retenir',src:S,title:'Principe du démarrage moteur — 3 étapes',bullets:[
+  '<b>1. Rotation à sec</b> — air APU injecté → "effet éolienne" → le moteur tourne sans carburant',
+  '<b>2. Injection</b> — à <span class="num">~20 % N2</span> : robinet kérosène + étincelles → combustion',
+  '<b>3. Autonomie</b> — la flamme s\'entretient seule → on coupe étincelles et air APU'],
+  warn:'Analogie : un briquet. L\'étincelle lance la flamme mais n\'est plus nécessaire ensuite.'},
+{id:'m2',th:'miseenroute',tag:'procedure',src:S,title:'Démarrage moteur — séquence opérationnelle',bullets:[
+  '<b>1.</b> Ouvrir la valve <span class="kw">BLEED</span> (air) de l\'APU',
+  '<b>2.</b> Sélecteur <span class="kw">ENGINE START → GRD</span> (sol)',
+  '<b>3.</b> <span class="kw">START VALVE OPEN</span> → l\'air entre, moteur tourne',
+  '<b>4.</b> Top chrono',
+  '<b>5.</b> À <span class="num">~20 % N2</span> → ouvrir le robinet kérosène',
+  '<b>6.</b> Surveiller l\'<span class="kw">EGT</span> qui monte, main sur le robinet',
+  '<b>7.</b> Si EGT trop haute → couper le kérosène',
+  '<b>8.</b> Stabilisé → EGT ~<span class="num">460 °C</span>, ralenti ~<span class="num">21 % N1</span>',
+  '<b>9.</b> Sélecteur revient <b>seul sur OFF</b> → répéter pour l\'autre moteur']},
+{id:'m4',th:'miseenroute',tag:'retenir',src:S,title:'Sécurité température au démarrage',bullets:[
+  'L\'EGT monte brutalement à l\'injection — normal',
+  'EGT au-delà de la limite → <b>couper le kérosène immédiatement</b>',
+  'Puis ventiler à vide (refroidir) → relancer',
+  '<b>Top chrono systématique</b> : temps dépassé → problème',
+  '<span class="kw">FADEC</span> = gestion électronique moteurs (anti-pompage auto)']},
+{id:'b1',th:'miseenroute',tag:'procedure',src:S,title:'Bascule électricité APU → moteurs',bullets:[
+  'Brancher <span class="kw">GEN 2</span> (moteur droit) puis <span class="kw">GEN 1</span> (moteur gauche)',
+  'L\'APU se déconnecte mais reste <b>disponible</b> (affiché en bleu)']},
+{id:'b2',th:'miseenroute',tag:'procedure',src:S,title:'Bascule air + coupure APU',bullets:[
+  'Prendre l\'<b>air des moteurs</b> (au lieu de l\'APU)',
+  'Enclencher les <span class="kw">PACKS</span> (air cabine)',
+  'Couper l\'air APU → APU sur <span class="kw">OFF</span>',
+  'Rien n\'est perdu ; l\'APU reste rallumable en vol (secours)']},
+{id:'s2',th:'miseenroute',tag:'procedure',src:S,title:'Systèmes à enclencher avant départ',bullets:[
+  '<span class="kw">Yaw damper</span> (amortisseur de lacet)',
+  'Signe <b>"Attachez vos ceintures"</b>',
+  '<b>Dégivrage</b> pare-brise + <span class="kw">sondes Pitot</span> (vitesse air)',
+  'Pompes hydrauliques électriques A et B',
+  '<b>Feux anticollision</b> (rouges) : <b>avant</b> la mise en route moteur',
+  '<b>Phares de roulage</b> avant de bouger'],
+  warn:'Les feux anticollision s\'allument AVANT les moteurs : ils préviennent le personnel au sol.'},
+
+/* ROULAGE */
+{id:'d6',th:'roulage',tag:'systeme',src:S,title:'Contrôle au sol',bullets:[
+  'Direction : <b>palonniers</b> (pédales) + <b>roulette de nez</b> (manette dédiée à gauche, pas le volant)',
+  'Freins : au <b>bout des palonniers</b> (pied droit = frein roue droite)',
+  'Le volant contrôle l\'<b>inclinaison (roulis)</b> → ne tourne pas au sol']},
+
+/* DÉCOLLAGE */
+{id:'d1',th:'decollage',tag:'procedure',src:S,title:'Check avant décollage — fondamentaux',bullets:[
+  '✓ Assez de <b>kérosène</b> ? Réservoirs <b>ouverts</b> ? <b>Pompes ON</b> ?',
+  '✓ <b>Volets</b> sortis (ex. <span class="num">5</span>) → vérifier l\'affichage réel',
+  '✓ <b>Train</b> sur <span class="kw">DOWN</span> ?',
+  '✓ <b>Aérofreins</b> armés ? <b>Freinage auto RTO</b> ?',
+  '✓ <b>Frein de parc</b> desserré ?'],
+  warn:'Valable de l\'ULM à l\'A380. Principe constant : "action → vérification".'},
+{id:'d2',th:'decollage',tag:'systeme',src:S,title:'Les volets (flaps)',bullets:[
+  'À <b>basse vitesse</b> : besoin de plus de portance',
+  'Les volets <b>augmentent surface et courbure</b> de l\'aile',
+  'Sortis pour décollage (ex. 5) et atterrissage',
+  'Toujours <b>contrôler la position réelle</b> affichée']},
+{id:'d3',th:'decollage',tag:'systeme',src:S,title:'Train d\'atterrissage',bullets:[
+  'Manette sur <span class="kw">DOWN</span> obligatoire au sol',
+  'Pas sur UP au sol : en prenant de la portance le train s\'allège → rentrerait → <b>ventre</b>',
+  'Rentrée : sur ordre, une fois <b>variomètre positif</b>',
+  'En haut : <b>verrouillé mécaniquement</b> → sélecteur OFF']},
+{id:'d4',th:'decollage',tag:'procedure',src:S,title:'Séquence de poussée',bullets:[
+  '<b>1.</b> Stabiliser à <span class="num">40 % N1</span> (vibrations, température, pression d\'huile)',
+  '   → de 40 % à 90 %, les moteurs montent <b>ensemble</b>',
+  '<b>2.</b> Passer à <span class="num">90 % N1</span> = poussée décollage',
+  '<b>3.</b> Main manette / main manche / pieds palonniers'],
+  warn:'Jamais de 0 % à 90 % direct : les moteurs ne monteraient pas de façon synchrone.'},
+{id:'d5',th:'decollage',tag:'acronyme',src:['b737_mer','a320_vent'],title:'V1 · VR — les vitesses clés',bullets:[
+  '<span class="kw">V1</span> = vitesse de <b>décision</b> : avant → on peut interrompre (RTO) ; après → on décolle',
+  '<span class="kw">VR</span> = vitesse de <b>rotation</b> : on tire le manche → assiette ~<span class="num">15°</span>',
+  'Plus de piste visible → décollé ; variomètre positif → <b>"gear up"</b>',
+  'Ex. A320 (vent fort) : V1 annoncée à <span class="num">128 kt</span>']},
+{id:'ap1',th:'decollage',tag:'procedure',src:S,title:'Checklist après décollage',bullets:[
+  '<b>1.</b> Pressurisation vérifiée',
+  '<b>2.</b> Train : sélecteur <span class="kw">OFF</span> (verrouillé mécaniquement)',
+  '<b>3.</b> Volets confirmés rentrés → voyant éteint',
+  '<b>4.</b> Freinage auto désarmé',
+  '<b>5.</b> Signe ceintures coupé si vol stabilisé']},
+
+/* EN VOL */
+{id:'ap2',th:'envol',tag:'procedure',src:S,title:'Navigation en montée',bullets:[
+  'Afficher un <b>cap</b> → suivre le <b>trait rose</b> du ND (trajectoire cible)',
+  '<b>Palier d\'accélération</b> ("bug up") → rentrer les volets par étapes (ex. 170 kt) puis accélérer (ex. 250 kt)',
+  '<b>Interception d\'altitude</b> : alarme ~<span class="num">1 000 ft</span> avant le palier',
+  '<span class="kw">Ground speed</span> ≠ <span class="kw">Airspeed</span> : l\'écart = effet du vent']},
+
+/* ÉLECTRIQUE & APU */
+{id:'a2',th:'elec',tag:'retenir',src:S,title:'Les 3 sources d\'énergie au sol',bullets:[
+  '<b>Batterie</b> — base, temporaire (<span class="num">15 min max</span>)',
+  '<b>APU</b> <span class="kw">Auxiliary Power Unit</span> — réacteur arrière : électricité + air',
+  '<b>GPU</b> <span class="kw">Ground Power Unit</span> — groupe de parc aéroport, payant',
+  'En vol : ce sont les <b>générateurs des moteurs</b>'],
+  warn:'GPU ≠ APU. Le GPU est externe (aéroport) ; l\'APU est intégré (queue de l\'avion).'},
+{id:'e2',th:'elec',tag:'systeme',src:S,title:'Les générateurs',bullets:[
+  '<span class="num">2 générateurs</span> principaux (entraînés par les moteurs)',
+  'Règle : <b>toujours 2 branchés</b> simultanément',
+  '<span class="kw">GEN 1</span> = moteur gauche / <span class="kw">GEN 2</span> = moteur droit (jamais "gauche/droite")',
+  'Générateurs APU = <b>secours en vol</b>']},
+{id:'p1',th:'elec',tag:'systeme',src:S,title:'APU — ce que c\'est',bullets:[
+  '<span class="kw">Auxiliary Power Unit</span> = petit <b>réacteur dans la queue</b>',
+  'Fournit <b>électricité + air comprimé</b>, ne propulse pas',
+  'L\'air sert à : ventiler la cabine + <b>démarrer les moteurs</b>']},
+
+/* CARBURANT */
+{id:'c1',th:'carbu',tag:'systeme',src:S,title:'Les 3 réservoirs du 737',bullets:[
+  '<span class="num">3 réservoirs</span> : aile gauche + aile droite + <b>central</b> (2 pompes chacun)',
+  'Consommation : d\'abord le <b>central</b> (les 2 moteurs), puis chaque moteur dans son aile',
+  '<b>Crossfeed</b> : robinet d\'intercommunication entre ailes']},
+{id:'c2',th:'carbu',tag:'procedure',src:S,title:'Mise en route des pompes',bullets:[
+  '<b>Toutes les pompes sur ON</b> avant le démarrage moteur',
+  'Les pompes mettent les <b>gaines en pression</b>',
+  'Le <b>robinet moteur reste fermé</b> jusqu\'à l\'injection'],
+  warn:'Pompes ON ≠ robinet ouvert : la pression est prête, le carburant n\'entre pas encore.'},
+
+/* HYDRAULIQUE */
+{id:'s1',th:'hydro',tag:'systeme',src:S,title:'Système hydraulique',bullets:[
+  'On ne pilote pas en prise directe → <b>assistance hydraulique</b> (comme la direction assistée)',
+  '<span class="num">2 circuits indépendants</span> : <span class="kw">A</span> et <span class="kw">B</span> (1 seul suffit)',
+  'Chaque circuit : <b>pompe mécanique</b> (moteur) + <b>pompe électrique</b>']},
+
+/* MOTEURS */
+{id:'m3',th:'moteurs',tag:'acronyme',src:S,title:'N1 · N2 · EGT',bullets:[
+  '<span class="kw">N1</span> = régime de la <b>soufflante (fan)</b> en % — ralenti ~<span class="num">21 %</span>, décollage ~<span class="num">90 %</span>',
+  '<span class="kw">N2</span> = régime du <b>compresseur HP</b> — repère au démarrage (~<span class="num">20 %</span>)',
+  '<span class="kw">EGT</span> = température des gaz d\'échappement — critique au démarrage'],
+  warn:'On surveille N2 au démarrage, N1 en exploitation.'},
+
+/* NAVIGATION */
+{id:'f1',th:'nav',tag:'acronyme',src:S,title:'Le FMC',bullets:[
+  '<span class="kw">FMC</span> = <b>Flight Management Computer</b> (ordinateur de vol)',
+  'On y entre : départ + destination + route',
+  'Affiche la trajectoire sur le <span class="kw">ND</span> (Navigation Display)']},
+{id:'f2',th:'nav',tag:'retenir',src:S,title:'Codes OACI des terrains',bullets:[
+  'Code <b>OACI à 4 lettres</b> par terrain',
+  '<span class="kw">LF__</span> = France : <span class="kw">LFMN</span> Nice · <span class="kw">LFPG</span> Paris-CDG · <span class="kw">LFPB</span> Le Bourget']},
+{id:'f3',th:'nav',tag:'retenir',src:S,title:'Numérotation des pistes',bullets:[
+  'Nommées d\'après l\'<b>orientation magnétique</b> : piste <span class="num">04</span> ≈ <span class="num">041°</span>',
+  'Piste en face = <span class="num">180°</span> d\'écart → piste <span class="num">22</span>',
+  'Peut changer de nom si le nord magnétique dérive (sans bouger géographiquement)']},
+{id:'f4',th:'nav',tag:'systeme',src:S,title:'ND & couleurs de relief — anti-CFIT',bullets:[
+  '<span class="kw">ND</span> : route (trait rose) + relief en couleurs',
+  '<b>Noir</b> = plus bas / <b>jaune</b> = proche / <b>rouge</b> = plus haut → danger',
+  '<span class="kw">CFIT</span> = Controlled Flight Into Terrain : avion sain qui percute le relief (perte de conscience de la position)'],
+  warn:'Le CFIT était la 1re cause d\'accidents humains avant ces systèmes d\'alerte.'},
+
+/* GLOSSAIRE */
+{id:'g1',th:'glossaire',tag:'acronyme',src:S,title:'Acronymes — Énergie & moteurs',bullets:[
+  '<span class="kw">APU</span> Auxiliary Power Unit · <span class="kw">GPU</span> Ground Power Unit',
+  '<span class="kw">N1</span> soufflante · <span class="kw">N2</span> compresseur HP · <span class="kw">EGT</span> température gaz',
+  '<span class="kw">FADEC</span> gestion électronique moteurs']},
+{id:'g2',th:'glossaire',tag:'acronyme',src:S,title:'Acronymes — Navigation & procédures',bullets:[
+  '<span class="kw">FMC</span> ordinateur de vol · <span class="kw">ND</span> écran de navigation',
+  '<span class="kw">OACI/ICAO</span> aviation civile internationale',
+  '<span class="kw">CFIT</span> collision sol · <span class="kw">RTO</span> décollage interrompu',
+  '<span class="kw">V1</span> décision · <span class="kw">VR</span> rotation']},
+{id:'g3',th:'glossaire',tag:'acronyme',src:S,title:'Anglais cockpit → français',bullets:[
+  '<span class="kw">Bleed air</span> air de prélèvement · <span class="kw">Crossfeed</span> intercommunication carburant',
+  '<span class="kw">Throttle</span> manette des gaz · <span class="kw">Yaw damper</span> amortisseur de lacet',
+  '<span class="kw">Packs</span> air cabine · <span class="kw">Pitot</span> sonde de vitesse',
+  '<span class="kw">Flaps</span> volets · <span class="kw">Speedbrakes</span> aérofreins',
+  '<span class="kw">Ground speed</span> vitesse sol · <span class="kw">Airspeed</span> vitesse air']},
+
+/* ═══ A320 — vent fort ═══ */
+{id:'dx1',th:'decollage',tag:'procedure',src:['a320_vent'],title:'Checklist décollage (A320)',bullets:[
+  'Autobrake sur <span class="kw">MAX</span> (freine seul en cas d\'arrêt décollage)',
+  'Cabin signs : <span class="kw">No smoking AUTO</span> + <b>ceintures ON</b>',
+  '<b>Spoilers armés</b> : sortent seuls si arrêt décollage avant V1 → freinage aéro + plaquent les freins',
+  '<span class="kw">Takeoff config test</span> : l\'avion valide la configuration',
+  '<span class="kw">Predictive windshear</span> sur AUTO (cisaillement de vent)']},
+{id:'dx2',th:'decollage',tag:'procedure',src:['a320_vent'],title:'Décollage par vent de travers',bullets:[
+  '<b>Toujours savoir d\'où vient le vent</b>',
+  'Régler ~<span class="num">50 % N1</span> contre les freins, vérifier stabilisé',
+  'Lâcher les freins (talons au plancher) → pleine puissance <span class="kw">TOGA</span>',
+  '<b>Manche (sidestick) du côté du vent</b> (vent de droite → manche à droite)',
+  'Maintenir l\'axe <b>au pied</b>, regarder droit devant',
+  'Annonces : <span class="kw">100 kt</span> → <span class="kw">V1</span> → rotation <span class="num">15°</span> → flight director'],
+  warn:'~30 kt de vent traversier = proche de la limite max. Les marges dépendent du poids et des winglets.'},
+{id:'cx1',th:'commandes',tag:'systeme',src:['a320_vent'],title:'Manettes Airbus — les détentes',bullets:[
+  'Manettes à <b>crans (détentes)</b> : <span class="kw">CL</span> climb · <span class="kw">FLEX/MCT</span> · <span class="kw">TOGA</span>',
+  '<span class="kw">TOGA</span> = pleine puissance (décollage / remise de gaz)',
+  '<span class="kw">FLEX</span> = poussée réduite (décollage économique selon conditions)',
+  '<span class="kw">CL</span> = montée/croisière (l\'auto-poussée gère)']},
+{id:'cx2',th:'commandes',tag:'systeme',src:['a320_vent'],title:'Spoilers, aérofreins & autobrake',bullets:[
+  '<b>Aérofreins/spoilers</b> : plaques sur l\'aile → freinage aérodynamique + plaquent l\'avion (freins plus efficaces)',
+  '<b>Armés</b> : sortent seuls à l\'atterrissage ou en arrêt décollage',
+  '<b>Autobrake</b> : freinage automatique — <span class="kw">MAX</span> au décollage (RTO), réglable à l\'atterrissage']},
+{id:'cx3',th:'commandes',tag:'retenir',src:['a320_vent'],title:'Philosophie Airbus — dark cockpit & sidestick',bullets:[
+  '<b>Dark cockpit</b> : au plafond, <b>aucune lumière = tout va bien</b> (une lumière = anomalie)',
+  'Pilotage au <b>sidestick</b> (mini-manche latéral), une main',
+  '<span class="kw">Dual input</span> : les sidesticks ne sont pas couplés → double action simultanée = alarme']},
+{id:'vx1',th:'envol',tag:'procedure',src:['a320_vent'],title:'Le tour de piste (circuit)',bullets:[
+  'Monter à <span class="num">2000 ft</span> dans l\'axe en suivant le flight director',
+  'Virage à <span class="num">25°</span> d\'inclinaison → <b>vent arrière</b> (parallèle à la piste)',
+  'Travers piste → <b>top chrono</b>',
+  'Temps avant de virer en base : <span class="formula">(altitude÷100) × 3</span> → 1500 ft → <span class="num">45 s</span>']},
+{id:'vx2',th:'envol',tag:'retenir',src:['a320_vent'],title:'Correction de la dérive (vent de travers)',bullets:[
+  'Vent de travers → l\'avion <b>dérive</b> : nez <b>face au vent</b> (crabe) pour tenir la trajectoire',
+  'On corrige la <b>dérive</b>, pas le chrono (sauf si le vent pousse/freine : ajuster le temps)',
+  'Distance de la piste en vent arrière : ~<span class="num">2,5 NM</span>']},
+{id:'ax1',th:'approche',tag:'procedure',src:['a320_vent'],title:'Approche stabilisée & vitesses',bullets:[
+  '<b>Volets par étapes</b> (1 → 2 → 3 → full), <b>train sorti</b> (3 vertes), aérofreins armés, autobrake',
+  'Vitesses badin : <span class="kw">S speed</span> (volets 1) · <span class="kw">F speed</span> (volets 2, ex. <span class="num">146 kt</span>)',
+  'Rester <b>entre les limites</b> du bandeau (ni trop rapide, ni trop lent)',
+  '<b>Approche stabilisée</b> : sinon → remise de gaz']},
+{id:'ax2',th:'approche',tag:'retenir',src:['a320_vent'],title:'Taux de descente en finale (calcul)',bullets:[
+  'Le vario en finale dépend de la <b>vitesse sol</b>',
+  'Règle : <span class="formula">vario ≈ (vitesse sol ÷ 2) × 10</span> ft/min',
+  'Ex. <span class="num">140 kt</span> sol → 70 × 10 = <span class="num">700 ft/min</span> à ne pas dépasser'],
+  warn:'Le calcul mental rapide est clé en pilotage (cf. fiche PSY1 maths).'},
+{id:'ax3',th:'approche',tag:'systeme',src:['a320_vent'],title:'Le PAPI — indicateur de plan',bullets:[
+  'Rampe lumineuse au bord de la piste : indique si on est sur le bon plan',
+  '<b>2 rouges + 2 blanches</b> = pile sur le plan',
+  '<b>3 puis 4 blanches</b> = trop haut · <b>3 puis 4 rouges</b> = trop bas',
+  'Plus on se rapproche, plus c\'est précis']},
+{id:'ax4',th:'approche',tag:'procedure',src:['a320_vent'],title:'Atterrissage par vent de travers — crabe & décrabe',bullets:[
+  'En finale, l\'avion est <b>en crabe</b> (nez décalé face au vent pour tenir l\'axe)',
+  '<b>Décrabe</b> : au dernier moment, <b>du pied</b> pour aligner le nez + <b>de l\'aile</b> du côté du vent pour ne pas dériver',
+  '« Axe avec les <b>ailes</b>, nez avec les <b>pieds</b> »',
+  '<b>En crabe</b> : se poser légèrement crabé, l\'inertie réaligne l\'avion au sol'],
+  warn:'Le décrabe est plus doux pour le train. En turbulences, une rafale peut tout décaler au dernier moment.'},
+{id:'ax5',th:'approche',tag:'procedure',src:['a320_vent'],title:'Arrondi, reverse & freinage',bullets:[
+  '<b>Arrondi (flare)</b> : cabrer légèrement juste avant le contact (annonce <span class="kw">RETARD</span>)',
+  '<b>Reverse</b> : les moteurs soufflent vers l\'avant pour freiner',
+  'On <b>annule les reverses</b> ensuite (bruit + consommation)',
+  'Aérofreins sortis + autobrake assurent le freinage']},
+{id:'ax6',th:'approche',tag:'retenir',src:['a320_vent'],title:'La remise de gaz (go-around)',bullets:[
+  '<span class="kw">TOGA</span> → suivre le flight director, regarder <b>les instruments</b> (pas dehors)',
+  '<b>Positive climb</b> → gear up → volets rentrés (flaps 1)',
+  'Ni un échec ni un risque : comme refaire un créneau. Pas besoin de se justifier',
+  '« Mieux vaut regretter d\'avoir fait une remise de gaz que de ne pas en avoir fait »']},
+{id:'gx1',th:'glossaire',tag:'acronyme',src:['a320_vent'],title:'Acronymes A320 — manettes & approche',bullets:[
+  '<span class="kw">TOGA</span> pleine poussée · <span class="kw">FLEX/MCT</span> poussée réduite · <span class="kw">CL</span> climb',
+  '<span class="kw">PAPI</span> plan d\'approche visuel · <span class="kw">VLS</span> vitesse mini sélectionnable',
+  '<span class="kw">F/S speed</span> vitesses volets/becs · <span class="kw">RETARD</span> réduction des gaz à l\'arrondi',
+  '<span class="kw">Décrabe</span> aligner le nez avant le toucher · <span class="kw">Dual input</span> double action sidestick']},
+];
+
+/* ════════ PERSISTANCE ════════ */
+const KEY='af_classeur_v2';
+let DB={};
+try{const r=localStorage.getItem(KEY);if(r)DB=JSON.parse(r);}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){}}
+function isSu(id){return !!DB[id];}
+function toggleSu(id){DB[id]=!DB[id];if(!DB[id])delete DB[id];save();}
+
+/* ════════ STATE ════════ */
+let activeTheme=THEMES[0].id;
+let query='';
+let todoOnly=false;
+let collapsed={};
+
+/* ════════ HELPERS ════════ */
+function fichesOf(th){return FICHES.filter(f=>f.th===th);}
+function tagLabel(t){return{procedure:'Procédure',systeme:'Système',acronyme:'Acronyme',retenir:'À retenir'}[t]||t;}
+
+/* ════════ SIDEBAR ════════ */
+function renderNav(){
+  const nav=document.getElementById('nav');
+  nav.innerHTML=CATEGORIES.map(c=>{
+    const themes=THEMES.filter(t=>t.cat===c.id);
+    const isCol=collapsed[c.id];
+    return `<div class="cat${isCol?' collapsed':''}" data-cat="${c.id}">
+      <div class="cat-head"><span class="dotc" style="background:${c.color}"></span>${c.label}<span class="chev">▾</span></div>
+      <div class="themes">${themes.map(t=>{
+        const fs=fichesOf(t.id);const done=fs.filter(f=>isSu(f.id)).length;
+        const cls=fs.length===0?'empty':(done===fs.length?'done':'');
+        return `<div class="theme${activeTheme===t.id&&!query?' active':''}" data-theme="${t.id}">
+          <span class="tn">${t.label}</span><span class="cnt ${cls}">${fs.length?done+'/'+fs.length:'—'}</span></div>`;
+      }).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ════════ PROGRESS ════════ */
+function renderProgress(){
+  const total=FICHES.length, done=FICHES.filter(f=>isSu(f.id)).length;
+  document.getElementById('prog-txt').textContent=`${done} / ${total}`;
+  document.getElementById('prog-bar').style.width=`${total?done/total*100:0}%`;
+}
+
+/* ════════ FICHE ════════ */
+function ficheHTML(f,withTheme){
+  const su=isSu(f.id);
+  const srcs=(f.src||[]).map(s=>`<span class="src">${SOURCES[s]||s}</span>`).join('');
+  return `<div class="fiche${su?' su':''}">
+    ${withTheme?`<div class="res-theme"><span class="dotc" style="display:inline-block;width:7px;height:7px;border-radius:2px;background:${catColor(themeObj(f.th).cat)}"></span>${themeObj(f.th).label}</div>`:''}
+    <div class="fiche-top"><div class="fiche-title">${f.title}</div><span class="tag ${f.tag}">${tagLabel(f.tag)}</span></div>
+    <div class="fiche-body"><ul>${f.bullets.map(b=>`<li>${b}</li>`).join('')}</ul>
+      ${f.warn?`<div class="warn"><strong>⚠ Point de vigilance</strong>${f.warn}</div>`:''}</div>
+    <div class="fiche-foot"><div class="sources">${srcs}</div>
+      <button class="su-btn" data-id="${f.id}">${su?'✓ Maîtrisé':'Marquer maîtrisé'}</button></div>
+  </div>`;
+}
+
+/* ════════ CONTENT ════════ */
+function renderContent(){
+  const content=document.getElementById('content');
+  const crumb=document.getElementById('crumb');
+
+  if(query){
+    const q=query.toLowerCase();
+    let res=FICHES.filter(f=>{
+      const hay=(f.title+' '+f.bullets.join(' ')+' '+themeObj(f.th).label).toLowerCase().replace(/<[^>]+>/g,'');
+      return hay.includes(q);
+    });
+    if(todoOnly)res=res.filter(f=>!isSu(f.id));
+    crumb.innerHTML=`Recherche · <span style="color:var(--muted);font-weight:400">${res.length} résultat${res.length>1?'s':''}</span>`;
+    content.innerHTML=res.length?`<div class="fiches">${res.map(f=>ficheHTML(f,true)).join('')}</div>`
+      :`<div class="empty"><div class="ico">⌕</div><p>Aucune fiche ne correspond à « ${query} ».</p></div>`;
+    return;
+  }
+
+  const t=themeObj(activeTheme);
+  crumb.innerHTML=`<span class="cpill" style="background:rgba(255,255,255,.05);color:${catColor(t.cat)}">${catLabel(t.cat)}</span> ${t.label}`;
+  let fs=fichesOf(activeTheme);
+  if(todoOnly)fs=fs.filter(f=>!isSu(f.id));
+
+  let head=`<div class="th-header"><div class="cpill" style="background:rgba(255,255,255,.05);color:${catColor(t.cat)}">${catLabel(t.cat)}</div><h2>${t.label}</h2>${fichesOf(activeTheme).length?`<div class="meta">${fichesOf(activeTheme).length} fiche${fichesOf(activeTheme).length>1?'s':''}</div>`:''}</div>`;
+
+  if(!fichesOf(activeTheme).length){
+    content.innerHTML=head+`<div class="empty"><div class="ico">✈</div><p>Ce thème est prêt mais encore vide.</p><p class="small">Il se remplira automatiquement quand une vidéo abordera ce sujet — sans dupliquer ce qui existe déjà ailleurs.</p></div>`;
+    return;
+  }
+  if(!fs.length){
+    content.innerHTML=head+`<div class="empty"><div class="ico">✓</div><p>Toutes les fiches de ce thème sont maîtrisées.</p></div>`;
+    return;
+  }
+  content.innerHTML=head+`<div class="fiches">${fs.map(f=>ficheHTML(f,false)).join('')}</div>`;
+}
+
+function renderAll(){renderNav();renderProgress();renderContent();}
+
+/* ════════ ÉVÉNEMENTS ════════ */
+document.getElementById('nav').addEventListener('click',e=>{
+  const th=e.target.closest('[data-theme]');
+  if(th){activeTheme=th.dataset.theme;query='';document.getElementById('search').value='';renderAll();
+    document.querySelector('.content').scrollIntoView({behavior:'smooth',block:'start'});return;}
+  const ch=e.target.closest('.cat-head');
+  if(ch){const cat=ch.closest('.cat').dataset.cat;collapsed[cat]=!collapsed[cat];renderNav();return;}
+});
+document.getElementById('search').addEventListener('input',e=>{query=e.target.value.trim();renderContent();renderNav();});
+document.getElementById('todoBtn').addEventListener('click',e=>{
+  todoOnly=!todoOnly;const b=e.currentTarget;b.classList.toggle('active',todoOnly);renderContent();
+});
+document.getElementById('content').addEventListener('click',e=>{
+  const btn=e.target.closest('.su-btn');if(!btn)return;
+  toggleSu(btn.dataset.id);renderAll();
+});
+
+renderAll();
+</script>
+</body>
+</html>
