@@ -193,6 +193,7 @@ const THEMES = [
 const SOURCES = {
   b737_mer:'Mise en route — B737 NG (simu)',
   a320_vent:'Atterrissage par vent fort — A320 (simu)',
+  croisiere_depress:'Croisière & dépressurisation — B737 (simu)',
 };
 function catColor(id){return (CATEGORIES.find(c=>c.id===id)||{}).color||'var(--muted)';}
 function catLabel(id){return (CATEGORIES.find(c=>c.id===id)||{}).label||'';}
@@ -457,6 +458,77 @@ const FICHES=[
   '<span class="kw">PAPI</span> plan d\'approche visuel · <span class="kw">VLS</span> vitesse mini sélectionnable',
   '<span class="kw">F/S speed</span> vitesses volets/becs · <span class="kw">RETARD</span> réduction des gaz à l\'arrondi',
   '<span class="kw">Décrabe</span> aligner le nez avant le toucher · <span class="kw">Dual input</span> double action sidestick']},
+
+/* ═══ Croisière & dépressurisation (B737) ═══ */
+{id:'vx3',th:'envol',tag:'retenir',src:['croisiere_depress'],title:'Niveaux de vol & calage standard',bullets:[
+  'En haute altitude on parle en <b>niveaux de vol (FL)</b> : <span class="kw">FL300</span> = 30 000 ft (on ajoute deux zéros)',
+  'Tous les avions calent l\'altimètre sur la pression standard <span class="kw">1013,25 hPa</span> (29,92 inHg) → même référence',
+  'Conversion rapide : <span class="formula">ft × 0,3 ≈ m</span> → FL300 ≈ 9 000 m']},
+{id:'vx4',th:'envol',tag:'retenir',src:['croisiere_depress'],title:'Pourquoi on parle en Mach en altitude',bullets:[
+  'Basse altitude : limite = <b>vitesse structurelle</b> (pression sur les bords d\'attaque)',
+  'Haute altitude : limite = <b>le mur du son</b> (rester subsonique)',
+  'La <b>vitesse du son dépend de la température</b> : ~1225 km/h à 15°C, plus faible quand il fait froid',
+  'Formule : <span class="formula">a ≈ 20,05 × √(T en Kelvin)</span> m/s',
+  'Croisière typique : <span class="num">Mach 0,78 à 0,82</span> selon l\'avion']},
+{id:'vx5',th:'envol',tag:'systeme',src:['croisiere_depress'],title:'Pourquoi la limite (MMO) est sous Mach 1',bullets:[
+  'Sur le dessus de l\'aile, l\'air est <b>accéléré</b> (effet venturi)',
+  'À Mach 0,99, cet air peut déjà être <b>supersonique</b> → onde de choc locale',
+  'D\'où une vitesse max (<span class="kw">MMO</span>) bien en dessous de Mach 1']},
+{id:'vx6',th:'envol',tag:'retenir',src:['croisiere_depress'],title:'Vitesse indiquée, vraie & sol (IAS / TAS / GS)',bullets:[
+  'Le <b>tube Pitot</b> mesure la pression dynamique → <span class="kw">IAS</span> (vitesse indiquée), ce que « sent » l\'aile',
+  'En altitude l\'air est moins dense : à IAS égale, on va <b>plus vite</b> réellement (TAS) et par rapport au sol (GS)',
+  '<span class="kw">Ground speed</span> = vitesse sol → sert au <b>calcul temps & carburant</b>',
+  'Avec du vent : <span class="kw">GS ≠ TAS</span> (composante de vent)']},
+{id:'vx7',th:'envol',tag:'retenir',src:['croisiere_depress'],title:'Pourquoi voler haut',bullets:[
+  'On va <b>plus vite par rapport au sol</b> (air moins dense)',
+  'On <b>consomme moins</b>',
+  'Plus <b>sûr</b> : pas d\'oiseaux à haute altitude']},
+{id:'vx8',th:'envol',tag:'systeme',src:['croisiere_depress'],title:'Le Concorde — voler en supersonique',bullets:[
+  'Aile <b>delta / ogivale</b> en forte flèche → résiste au passage du mur du son',
+  'Le <b>réacteur ne supporte pas</b> un air d\'entrée supersonique',
+  'Des <b>carénages/rampes</b> ralentissaient l\'air (~2000 → ~800 km/h) avant le moteur',
+  'Sur un avion de ligne, moteurs à l\'avant de l\'aile → l\'onde de choc irait dans le moteur']},
+{id:'dp1',th:'depress',tag:'systeme',src:['croisiere_depress'],title:'La pressurisation cabine',bullets:[
+  'En croisière, l\'air extérieur est trop froid (~−50°C) et trop peu dense pour être respirable',
+  'L\'avion <b>prélève, sèche, comprime, refroidit</b> l\'air et le réinjecte (comme une cocotte-minute)',
+  'La pression est régulée par les <b>outflow valves</b> à l\'arrière (s\'ouvrent/ferment)',
+  'Altitude cabine maintenue ~<span class="num">2000 m</span> alors que l\'avion est à ~10-12 000 m']},
+{id:'dp2',th:'depress',tag:'retenir',src:['croisiere_depress'],title:'Dépressurisation — types & temps de conscience',bullets:[
+  '<b>Lente</b> ou <b>rapide/explosive</b> (valve bloquée, joint de porte, perte d\'un hublot…)',
+  'Très <b>rare</b> : &lt; 10 cas/an sur 40+ millions de vols, gérée → aucun décès',
+  '<b>Temps de conscience utile</b> : ~<span class="num">7 à 10 s</span> en dépressurisation rapide à haute altitude',
+  'Signes : douleur aux oreilles, fort bruit, <b>buée</b> (l\'air chaud se refroidit)']},
+{id:'dp3',th:'depress',tag:'procedure',src:['croisiere_depress'],title:'Les masques à oxygène',bullets:[
+  'Équipage : <b>masques à pose rapide (quick-don)</b>, une main, mis <b>en premier</b>',
+  'Basculer le <b>micro sur le masque</b> pour continuer à communiquer (pilotes + tour)',
+  'Passagers : masques qui <b>tombent automatiquement</b> (4 masques pour une rangée de 3)']},
+{id:'dp4',th:'depress',tag:'procedure',src:['croisiere_depress'],title:'La descente d\'urgence — séquence',bullets:[
+  '<b>1.</b> Masques O₂ + communication établie (priorité absolue, ~5 s)',
+  '<b>2.</b> <span class="kw">MAYDAY ×3</span> + indicatif + « emergency descent » (pas besoin de confirmer/justifier)',
+  '<b>3.</b> Transpondeur <span class="kw">7700</span> + <span class="kw">IDENT</span> (fait clignoter le plot radar)',
+  '<b>4.</b> Déconnecter le pilote auto, <b>30° d\'écart</b> de la route (à droite) → dégager le trafic en dessous',
+  '<b>5.</b> Descendre à la <b>vitesse max</b> (MMO puis VMO) sans entrer dans le rouge ; sortir <b>train + aérofreins</b> (traînée)',
+  '<b>6.</b> Descendre vers <span class="num">10 000 ft</span> (~3000 m), air respirable, en respectant le relief',
+  '<b>7.</b> Palier 10 000 ft → masques retirables ; rentrer train (~235 kt) et aérofreins']},
+{id:'dp5',th:'depress',tag:'retenir',src:['croisiere_depress'],title:'Respecter le relief — grille MORA',bullets:[
+  'En descente d\'urgence, ne <b>jamais descendre sous l\'altitude de sécurité</b> du relief (ex. Mont Blanc)',
+  'La <b>grille MORA</b> (Minimum Off-Route Altitude) donne l\'altitude mini de descente par zone',
+  'Objectif standard : <span class="num">10 000 ft</span>, sauf relief plus haut']},
+{id:'dp6',th:'depress',tag:'procedure',src:['croisiere_depress'],title:'Après la descente — déroutement',bullets:[
+  'Interroger la <b>cabine</b> (blessés ?) → se poser rapidement dans tous les cas',
+  '<b>Bilan carburant</b> : en basse altitude on consomme plus → rayon d\'action réduit',
+  'Le contrôle oriente vers l\'<b>aéroport le plus proche</b>',
+  'Tout se fait <b>de mémoire</b> puis se vérifie à la <b>checklist</b>']},
+{id:'fx5',th:'nav',tag:'systeme',src:['croisiere_depress'],title:'Transpondeur & codes d\'urgence',bullets:[
+  '<b>Transpondeur</b> : émet un code (squawk) qui identifie l\'avion (cf. Flightradar24)',
+  'Code <b>assigné par le contrôle</b> au départ',
+  'Codes d\'urgence universels : <span class="kw">7500</span> détournement · <span class="kw">7600</span> panne radio · <span class="kw">7700</span> urgence',
+  '<span class="kw">IDENT</span> : fait clignoter le plot sur l\'écran radar du contrôleur']},
+{id:'fx6',th:'nav',tag:'retenir',src:['croisiere_depress'],title:'ETOPS & point de non-retour',bullets:[
+  '<span class="kw">ETOPS</span> : certification pour voler <b>loin de tout aéroport</b> (ex. transatlantique, &gt; 2 h d\'un terrain)',
+  'Le moteur doit être certifié pour voler plusieurs heures <b>sur un seul moteur</b>',
+  'Carburant suffisant pour <b>rejoindre le terrain le plus proche</b>, même bas après dépressurisation',
+  '<span class="kw">PNR</span> (point de non-retour) : au-delà, plus rapide de continuer que de revenir']},
 ];
 
 /* ════════ PERSISTANCE ════════ */
